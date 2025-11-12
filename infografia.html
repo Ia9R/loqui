@@ -1,0 +1,663 @@
+<!-- Chosen Palette: Slate/Sky Dark Theme -->
+<!-- Application Structure Plan: Dashboard con navegación lateral fija. El contenido principal se divide en tarjetas temáticas (Arquitectura, Requisitos, Planificación). Se elige esta estructura de dashboard para facilitar la exploración no lineal y permitir que el usuario vea el panorama general (Objetivos) y profundice en cualquier componente (Servidor/Cliente) o en el detalle del plan (Hitos) de forma rápida. La navegación y el uso de pestañas minimizan el scroll vertical, mejorando la usabilidad. -->
+<!-- Visualization & Content Choices:
+1. Resumen de Requisitos: -> Goal: Quick status check. -> Viz/Presentation Method: Chart.js Donut Chart (Total RFs vs. Completados - simulado). -> Interaction: None (Static status). -> Justification: Visualiza el alcance del proyecto. -> Library/Method: Chart.js.
+2. Arquitectura (Servidor vs. Cliente): -> Goal: Compare roles. -> Viz/Presentation Method: Tabbed View (Pestañas). -> Interaction: Click/Toggle to switch views. -> Justification: Organiza descripciones densas en un espacio reducido. -> Library/Method: Vanilla JS.
+3. Hitos: -> Goal: Timeline visualization. -> Viz/Presentation Method: Sequential Cards. -> Interaction: Simulated Status Toggle (Marcar como 'Completado'). -> Justification: Permite ver el progreso secuencial del proyecto. -> Library/Method: HTML/CSS + JS.
+4. Protocolo: -> Goal: Display key structure. -> Viz/Presentation Method: HTML Table. -> Interaction: None. -> Justification: Claridad en la definición de la comunicación. -> Library/Method: HTML/CSS.
+5. Gemini Feature: Architectural Explanations -> Goal: Deep technical context. -> Viz/Presentation Method: Modal Dialog with search grounding. -> Interaction: Button click, selection. -> Justification: Quick, context-aware learning for C++ networking concepts. -> Library/Method: Gemini API (gemini-2.5-flash-preview-09-2025 + Google Search).
+6. Gemini Feature: NFR Generation -> Goal: Planning augmentation. -> Viz/Presentation Method: Dynamic Text List. -> Interaction: Button click. -> Justification: Ensures critical non-functional aspects are not overlooked. -> Library/Method: Gemini API (gemini-2.5-flash-preview-09-2025).
+CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loqui: Dashboard del Pre-Proyecto</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght100;400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a; 
+            --card-dark: #1e293b; 
+            --text-light: #f1f5f9; 
+            --accent: #38bdf8; 
+            --accent-dark: #0284c7;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            min-height: 100vh;
+        }
+        .sidebar {
+            background-color: var(--card-dark);
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+        }
+        .card {
+            background-color: var(--card-dark);
+            border-radius: 0.5rem;
+            border: 1px solid rgba(100, 116, 139, 0.3);
+        }
+        .active-nav {
+            background-color: var(--accent-dark);
+            color: white;
+            border-radius: 0.375rem;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px; 
+            max-height: 400px;
+        }
+        .modal {
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+        /* Estilo específico para mantener la barra lateral fija en desktop */
+        @media (min-width: 768px) {
+            .fixed-sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100vh;
+            }
+        }
+    </style>
+</head>
+<body class="md:flex">
+
+    <!-- Barra Lateral (Ahora fija en desktop) -->
+    <nav id="sidebar" class="sidebar p-4 md:w-64 w-full fixed bottom-0 md:fixed md:top-0 md:left-0 md:h-screen z-10 md:shadow-none">
+        <h1 class="text-2xl font-bold mb-6 text-accent hidden md:block">Loqui Dev</h1>
+        <div id="nav-list" class="flex md:flex-col justify-around md:justify-start space-x-2 md:space-x-0 md:space-y-2">
+            <a href="#overview" class="nav-item p-2 hover:bg-slate-700 transition active-nav">
+                <span class="md:inline-block">🏠 Resumen</span>
+            </a>
+            <a href="#arquitectura" class="nav-item p-2 hover:bg-slate-700 transition">
+                <span class="md:inline-block">⚙️ Arquitectura</span>
+            </a>
+            <a href="#requisitos" class="nav-item p-2 hover:bg-slate-700 transition">
+                <span class="md:inline-block">✅ Requisitos</span>
+            </a>
+            <a href="#planificacion" class="nav-item p-2 hover:bg-slate-700 transition">
+                <span class="md:inline-block">📅 Planificación</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Contenido Principal (con margen para la barra lateral) -->
+    <main class="flex-1 p-4 md:p-8 md:ml-64 overflow-y-auto pb-24 md:pb-8">
+        <header class="mb-8">
+            <h2 class="text-4xl font-extrabold text-accent">Dashboard del Pre-Proyecto Loqui</h2>
+            <p class="mt-2 text-slate-400">Sistema de Mensajería Empresarial Privado (C++ Cliente-Servidor)</p>
+        </header>
+
+        <!-- Sección 1: Resumen y Objetivos -->
+        <section id="overview" class="mb-12">
+            <div class="card p-6 mb-8">
+                <h3 class="text-2xl font-semibold mb-3 border-b border-slate-700 pb-2">1. Introducción y Objetivos Clave</h3>
+                <p class="text-slate-300 leading-relaxed mb-4">
+                    Este sistema de comunicación interna, **Loqui**, se desarrolla en C++ con una arquitectura Cliente-Servidor para operar exclusivamente en la Intranet corporativa. El enfoque principal es la privacidad total y la autonomía, eliminando la dependencia de servicios de mensajería de terceros.
+                </p>
+                <div class="grid md:grid-cols-3 gap-4 text-center">
+                    <div class="p-4 bg-slate-800 rounded-lg">
+                        <p class="text-3xl font-bold text-sky-400">C++17</p>
+                        <p class="text-sm text-slate-400">Lenguaje Base</p>
+                    </div>
+                    <div class="p-4 bg-slate-800 rounded-lg">
+                        <p class="text-3xl font-bold text-sky-400">Sockets</p>
+                        <p class="text-sm text-slate-400">Tecnología de Red</p>
+                    </div>
+                    <div class="p-4 bg-slate-800 rounded-lg">
+                        <p class="text-3xl font-bold text-sky-400">RF-6</p>
+                        <p class="text-sm text-slate-400">Requisitos Funcionales</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráfico de Requisitos -->
+            <div class="card p-6">
+                <h3 class="text-2xl font-semibold mb-4 border-b border-slate-700 pb-2">Progreso de Requisitos Funcionales</h3>
+                <p class="text-slate-400 mb-4">
+                    Visualización del alcance del proyecto. El objetivo es alcanzar el 100% de los 6 Requisitos Funcionales (RFs) definidos en la sección 4.
+                </p>
+                <div class="chart-container">
+                    <canvas id="rfChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección 2: Arquitectura y Diseño Técnico -->
+        <section id="arquitectura" class="mb-12">
+            <h3 class="text-3xl font-bold mb-4 text-accent">2. Arquitectura y Diseño Técnico</h3>
+            <p class="mb-6 text-slate-300">
+                Esta sección detalla los componentes clave, el modelo de concurrencia y el protocolo de comunicación que permiten la funcionalidad de Loqui.
+            </p>
+
+            <div class="card p-6 mb-6">
+                <h4 class="text-xl font-semibold mb-4">Estructura de Componentes</h4>
+                <div class="flex space-x-2 mb-4">
+                    <button id="tab-server" class="tab-btn bg-sky-600 hover:bg-sky-700 text-white font-medium py-2 px-4 rounded-lg transition" data-component="server">
+                        Servidor (LoquiServer)
+                    </button>
+                    <button id="tab-client" class="tab-btn bg-slate-700 hover:bg-slate-600 text-white font-medium py-2 px-4 rounded-lg transition" data-component="client">
+                        Cliente (LoquiClient)
+                    </button>
+                </div>
+                
+                <div id="content-server" class="tab-content">
+                    <p class="font-medium text-sky-300 mb-2">Función Principal:</p>
+                    <ul class="list-disc list-inside ml-4 space-y-1 text-slate-300">
+                        <li>Escuchar el puerto de conexión y gestionar la autenticación.</li>
+                        <li>Mantener un registro de usuarios conectados y actuar como *relay*.</li>
+                    </ul>
+                    <p class="font-medium text-sky-300 mt-3 mb-2">Manejo de Concurrencia:</p>
+                    <p class="ml-4 text-slate-300">**Hilos (`std::thread`)**. Se lanzará un hilo dedicado por cada cliente para manejar sus operaciones, permitiendo concurrencia.</p>
+                </div>
+
+                <div id="content-client" class="tab-content hidden">
+                    <p class="font-medium text-sky-300 mb-2">Función Principal:</p>
+                    <ul class="list-disc list-inside ml-4 space-y-1 text-slate-300">
+                        <li>Proporcionar la interfaz de usuario (CLI/Gráfica simple).</li>
+                        <li>Establecer dos hilos: uno para enviar mensajes y otro para escuchar permanentemente al servidor.</li>
+                    </ul>
+                </div>
+
+                <div class="mt-6 border-t border-slate-700 pt-4">
+                    <h5 class="text-lg font-semibold mb-2">✨ Asistente Arquitectónico</h5>
+                    <p class="text-sm text-slate-400 mb-3">Obtén una explicación técnica con contexto sobre los pilares de la arquitectura de Loqui.</p>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="showArchitectureModal('Sockets')" class="py-2 px-4 text-sm bg-indigo-600 hover:bg-indigo-700 rounded-lg transition">
+                            Sockets
+                        </button>
+                        <button onclick="showArchitectureModal('Hilos')" class="py-2 px-4 text-sm bg-indigo-600 hover:bg-indigo-700 rounded-lg transition">
+                            Hilos (`std::thread`)
+                        </button>
+                        <button onclick="showArchitectureModal('Hashing (SHA-256)')" class="py-2 px-4 text-sm bg-indigo-600 hover:bg-indigo-700 rounded-lg transition">
+                            Hashing (SHA-256)
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card p-6">
+                <h4 class="text-xl font-semibold mb-4">Protocolo de Comunicación</h4>
+                <p class="mb-4 text-slate-300">
+                    Se utilizará un protocolo basado en texto con campos delimitados (ej. `|`) para simplificar la serialización y deserialización a través del socket.
+                </p>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-slate-300">
+                        <thead class="text-xs uppercase bg-slate-700 text-slate-300">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">Tipo de Mensaje</th>
+                                <th scope="col" class="px-6 py-3">Estructura (Ejemplo)</th>
+                                <th scope="col" class="px-6 py-3">Propósito</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="bg-slate-800 border-b border-slate-700">
+                                <th scope="row" class="px-6 py-4 font-medium whitespace-nowrap text-white">AUTH_REQUEST</th>
+                                <td class="px-6 py-4">`AUTH|userX|passY`</td>
+                                <td class="px-6 py-4">Solicitud de Login o Registro.</td>
+                            </tr>
+                            <tr class="bg-slate-800 border-b border-slate-700">
+                                <th scope="row" class="px-6 py-4 font-medium whitespace-nowrap text-white">CHAT_MESSAGE</th>
+                                <td class="px-6 py-4">`MSG|fromX|toY|content`</td>
+                                <td class="px-6 py-4">Envío de un mensaje de chat.</td>
+                            </tr>
+                            <tr class="bg-slate-800 border-b border-slate-700">
+                                <th scope="row" class="px-6 py-4 font-medium whitespace-nowrap text-white">SERVER_RESPONSE</th>
+                                <td class="px-6 py-4">`RESP|OK|Mensaje de éxito`</td>
+                                <td class="px-6 py-4">Respuestas del servidor (éxito/error, estado).</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección 3: Requisitos Funcionales -->
+        <section id="requisitos" class="mb-12">
+            <h3 class="text-3xl font-bold mb-4 text-accent">4. Requisitos Funcionales (RFs)</h3>
+            <p class="mb-6 text-slate-300">
+                Estos son los requisitos mínimos que el sistema debe cumplir para ser considerado operativo. Haz clic para ver la descripción completa de cada RF.
+            </p>
+
+            <div id="requisitos-list" class="space-y-3 mb-8">
+                <!-- Los requisitos se llenan dinámicamente con JS -->
+            </div>
+            
+            <div class="card p-6">
+                <h5 class="text-xl font-semibold mb-2">✨ Generador de Requisitos No Funcionales (RNFs)</h5>
+                <p class="text-sm text-slate-400 mb-3">Asegura la calidad del proyecto. Haz clic para generar una lista de RNFs críticos para un sistema de chat corporativo.</p>
+                <button id="nfr-button" onclick="generateNFRs()" class="py-2 px-4 text-sm bg-sky-600 hover:bg-sky-700 rounded-lg transition font-medium flex items-center">
+                    Generar 7 RNFs Esenciales
+                </button>
+                <div id="nfr-output" class="mt-4 text-slate-300"></div>
+            </div>
+        </section>
+
+        <!-- Sección 4: Planificación -->
+        <section id="planificacion" class="mb-12">
+            <h3 class="text-3xl font-bold mb-4 text-accent">5. Planificación (Hitos)</h3>
+            <p class="mb-6 text-slate-300">
+                El plan de desarrollo se divide en 5 hitos principales. El estado de cada hito puede ser actualizado haciendo clic en el botón.
+            </p>
+            <div id="hitos-container" class="space-y-4">
+                <!-- Los hitos se llenan dinámicamente con JS -->
+            </div>
+        </section>
+
+    </main>
+    
+    <!-- Modal para Explicaciones Arquitectónicas (Feature 1) -->
+    <div id="architecture-modal" class="modal fixed inset-0 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-card-dark rounded-xl shadow-2xl w-full max-w-lg p-6 border border-slate-700">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-2">
+                <h3 id="modal-title" class="text-xl font-semibold text-accent"></h3>
+                <button onclick="closeArchitectureModal()" class="text-slate-400 hover:text-white transition">
+                    &times;
+                </button>
+            </div>
+            <div id="modal-content" class="text-slate-300 text-sm h-60 overflow-y-auto">
+                <div id="modal-loader" class="text-center py-10 hidden">
+                    <div class="animate-spin inline-block w-6 h-6 border-4 border-sky-400 border-t-transparent rounded-full"></div>
+                    <p class="mt-2">Generando explicación técnica...</p>
+                </div>
+                <div id="modal-text" class="prose prose-sm prose-invert max-w-none"></div>
+            </div>
+            <div id="modal-sources" class="mt-4 text-xs text-slate-500 border-t border-slate-800 pt-2"></div>
+        </div>
+    </div>
+
+
+    <script>
+        const API_KEY = "";
+        const LLM_MODEL = "gemini-2.5-flash-preview-09-2025";
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${LLM_MODEL}:generateContent?key=${API_KEY}`;
+        
+        const DATA = {
+            requirements: [
+                { id: "RF-1.0", name: "Registro de Usuario", desc: "El cliente debe poder enviar credenciales para crear un nuevo usuario." },
+                { id: "RF-2.0", name: "Inicio de Sesión", desc: "El usuario debe autenticarse correctamente antes de usar el chat." },
+                { id: "RF-3.0", name: "Envío de Mensajes", desc: "Un cliente autenticado debe poder enviar un mensaje a otro cliente conectado." },
+                { id: "RF-4.0", name: "Recepción de Mensajes", desc: "Un cliente debe recibir mensajes de manera asíncrona." },
+                { id: "RF-5.0", name: "Listado de Usuarios", desc: "El servidor debe poder enviar una lista de usuarios disponibles." },
+                { id: "RF-6.0", name: "Cierre de Sesión", desc: "El cliente debe poder cerrar la conexión de forma segura." }
+            ],
+            milestones: [
+                { id: "H-1", desc: "Configuración de Entorno y Sockets Básicos (Echo Server)", date: "10-Nov-2025", status: "Pendiente" },
+                { id: "H-2", desc: "Implementación de Persistencia y Hashing (Funcionalidad de Registro)", date: "11-Nov-2025", status: "Pendiente" },
+                { id: "H-3", desc: "Servidor Multithread y Manejo de Sesiones (Login y Concurrencia)", date: "12-Nov-2025", status: "Pendiente" },
+                { id: "H-4", desc: "Interfaz de Cliente y Protocolo de Mensajería (RF-3.0, RF-4.0)", date: "13-Nov-2025", status: "Pendiente" },
+                { id: "H-5", desc: "Pruebas y Documentación Final", date: "14-Nov-2025", status: "Pendiente" }
+            ],
+            totalRFs: 6,
+            completedRFs: 0 
+        };
+
+        // --- Utilidad para la API de Gemini con Reintento Exponencial ---
+        async function fetchWithRetry(url, options, maxRetries = 5) {
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.status === 429) { // Too Many Requests
+                        const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        continue;
+                    }
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return await response.json();
+                } catch (error) {
+                    if (i === maxRetries - 1) throw error;
+                    const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
+        }
+
+        // --- Feature 1: Asistente Arquitectónico (con Google Search Grounding) ---
+
+        async function showArchitectureModal(concept) {
+            const modal = document.getElementById('architecture-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalText = document.getElementById('modal-text');
+            const modalLoader = document.getElementById('modal-loader');
+            const modalSources = document.getElementById('modal-sources');
+
+            modalTitle.textContent = `Explicación Técnica: ${concept}`;
+            modalText.innerHTML = '';
+            modalSources.innerHTML = '';
+            modalLoader.classList.remove('hidden');
+            modal.classList.remove('hidden');
+
+            const systemPrompt = "Actúa como un profesor universitario de ingeniería de software. Proporciona una explicación concisa y autorizada, usando Markdown y lenguaje técnico apropiado, en español. Enfócate en el contexto de C++ y la arquitectura cliente-servidor de mensajería.";
+            const userQuery = `Explícame qué son los ${concept} en el contexto de C++ y la arquitectura cliente-servidor de mensajería, enfocándote en buenas prácticas y seguridad.`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                tools: [{ "google_search": {} }],
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                }
+            };
+
+            try {
+                const result = await fetchWithRetry(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                modalLoader.classList.add('hidden');
+                const candidate = result.candidates?.[0];
+
+                if (candidate && candidate.content?.parts?.[0]?.text) {
+                    const text = candidate.content.parts[0].text;
+                    modalText.innerHTML = text.replace(/\n/g, '<br>'); // Simple Markdown to HTML
+                    
+                    let sourcesHtml = 'Fuentes: ';
+                    const groundingMetadata = candidate.groundingMetadata;
+                    let sources = [];
+
+                    if (groundingMetadata && groundingMetadata.groundingAttributions) {
+                        sources = groundingMetadata.groundingAttributions
+                            .map(attribution => ({
+                                uri: attribution.web?.uri,
+                                title: attribution.web?.title,
+                            }))
+                            .filter(source => source.uri && source.title); 
+                    }
+
+                    if (sources.length > 0) {
+                        sourcesHtml += sources.map((s, i) => 
+                            `<a href="${s.uri}" target="_blank" class="text-sky-400 hover:text-sky-300">${s.title}</a>`
+                        ).join(' | ');
+                    } else {
+                        sourcesHtml += 'No se encontraron fuentes específicas.';
+                    }
+                    modalSources.innerHTML = sourcesHtml;
+                } else {
+                    modalText.innerHTML = '<p class="text-red-400">Error al obtener la respuesta del modelo.</p>';
+                }
+
+            } catch (e) {
+                console.error("Gemini API Error:", e);
+                modalLoader.classList.add('hidden');
+                modalText.innerHTML = '<p class="text-red-400">Error en la conexión o en la API. Inténtalo de nuevo.</p>';
+            }
+        }
+
+        function closeArchitectureModal() {
+            document.getElementById('architecture-modal').classList.add('hidden');
+        }
+
+
+        // --- Feature 2: Generador de RNFs (con Structured Output) ---
+        
+        async function generateNFRs() {
+            const nfrOutput = document.getElementById('nfr-output');
+            const nfrButton = document.getElementById('nfr-button');
+            
+            nfrOutput.innerHTML = `<div class="text-center py-4"><div class="animate-spin inline-block w-4 h-4 border-2 border-sky-400 border-t-transparent rounded-full mr-2"></div> Generando RNFs...</div>`;
+            nfrButton.disabled = true;
+            nfrButton.classList.add('opacity-50');
+
+            const systemPrompt = "Actúa como un arquitecto de software experimentado y devuelve solo un array JSON, sin preámbulos, que contenga 7 objetos. Cada objeto debe tener 'id' (NFR-X.0), 'nombre' y 'descripcion' en español. Enfócate en los dominios de Seguridad, Rendimiento, Disponibilidad y Mantenibilidad.";
+            const userQuery = "Genera 7 requisitos no funcionales esenciales (RNF) para un sistema de chat corporativo privado desarrollado en C++. Deben enfocarse en Seguridad, Rendimiento, Disponibilidad y Mantenibilidad.";
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "ARRAY",
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                "id": { "type": "STRING" },
+                                "nombre": { "type": "STRING" },
+                                "descripcion": { "type": "STRING" }
+                            },
+                            "propertyOrdering": ["id", "nombre", "descripcion"]
+                        }
+                    }
+                }
+            };
+
+            try {
+                const result = await fetchWithRetry(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const candidate = result.candidates?.[0];
+                if (candidate && candidate.content?.parts?.[0]?.text) {
+                    const json = candidate.content.parts[0].text;
+                    const parsedNFRs = JSON.parse(json);
+
+                    let html = '<ul class="space-y-3">';
+                    parsedNFRs.forEach(nfr => {
+                        html += `<li class="p-3 bg-slate-700 rounded-lg">
+                            <span class="font-bold text-sky-300">${nfr.id} (${nfr.nombre}):</span>
+                            <span class="text-slate-300">${nfr.descripcion}</span>
+                        </li>`;
+                    });
+                    html += '</ul>';
+                    nfrOutput.innerHTML = html;
+                } else {
+                    nfrOutput.innerHTML = '<p class="text-red-400">Error: El modelo no devolvió el formato JSON esperado.</p>';
+                }
+
+            } catch (e) {
+                console.error("Gemini API Error (NFR):", e);
+                nfrOutput.innerHTML = '<p class="text-red-400">Error de conexión o de la API al generar los RNFs. Inténtalo de nuevo.</p>';
+            } finally {
+                nfrButton.disabled = false;
+                nfrButton.classList.remove('opacity-50');
+            }
+        }
+
+
+        // --- Funciones del Dashboard Original ---
+
+        function setupNavigation() {
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = item.getAttribute('href').substring(1);
+                    const targetElement = document.getElementById(targetId);
+
+                    navItems.forEach(i => i.classList.remove('active-nav', 'bg-sky-600'));
+                    item.classList.add('active-nav', 'bg-sky-600');
+
+                    // Usar scrollIntoView en el elemento principal
+                    targetElement.scrollIntoView({ behavior: 'smooth' });
+                    
+                    // Si es móvil, cerrar la barra lateral o asegurarse de que el target scroll
+                    if (window.innerWidth < 768) {
+                         // No hacemos nada ya que en móvil el menú está abajo y no tapa
+                    }
+                });
+            });
+
+            // Intersection Observer para actualizar el elemento activo al hacer scroll
+            const observerOptions = { root: null, rootMargin: "0px", threshold: 0.5 };
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const id = entry.target.getAttribute('id');
+                    const navLink = document.querySelector(`a[href="#${id}"]`);
+
+                    if (navLink) {
+                        if (entry.isIntersecting) {
+                            navItems.forEach(i => i.classList.remove('active-nav', 'bg-sky-600'));
+                            navLink.classList.add('active-nav', 'bg-sky-600');
+                        }
+                    }
+                });
+            }, observerOptions);
+
+            document.querySelectorAll('section').forEach(section => observer.observe(section));
+        }
+
+        function setupTabs() {
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const component = button.dataset.component;
+
+                    tabButtons.forEach(btn => {
+                        btn.classList.remove('bg-sky-600', 'hover:bg-sky-700');
+                        btn.classList.add('bg-slate-700', 'hover:bg-slate-600');
+                    });
+                    
+                    button.classList.remove('bg-slate-700', 'hover:bg-slate-600');
+                    button.classList.add('bg-sky-600', 'hover:bg-sky-700');
+
+                    tabContents.forEach(content => {
+                        content.classList.add('hidden');
+                    });
+
+                    document.getElementById(`content-${component}`).classList.remove('hidden');
+                });
+            });
+        }
+
+        function renderRequirements() {
+            const listContainer = document.getElementById('requisitos-list');
+            DATA.requirements.forEach((rf, index) => {
+                const button = document.createElement('button');
+                button.className = 'w-full text-left p-4 card hover:bg-slate-700 transition font-medium rounded-lg shadow-md';
+                button.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="text-sky-400">${rf.id}: ${rf.name}</span>
+                        <span id="rf-icon-${index}" class="text-lg">▼</span>
+                    </div>
+                    <p id="rf-detail-${index}" class="mt-2 text-sm text-slate-400 hidden">${rf.desc}</p>
+                `;
+                button.addEventListener('click', () => {
+                    const detail = document.getElementById(`rf-detail-${index}`);
+                    const icon = document.getElementById(`rf-icon-${index}`);
+                    const isHidden = detail.classList.contains('hidden');
+                    if (isHidden) {
+                        detail.classList.remove('hidden');
+                        icon.textContent = '▲';
+                    } else {
+                        detail.classList.add('hidden');
+                        icon.textContent = '▼';
+                    }
+                });
+                listContainer.appendChild(button);
+            });
+        }
+
+        function renderMilestones() {
+            const container = document.getElementById('hitos-container');
+            DATA.milestones.forEach((h, index) => {
+                const card = document.createElement('div');
+                card.id = `hito-${index}`;
+                card.className = 'card p-4 flex justify-between items-center';
+
+                const statusColor = h.status === 'Completado' ? 'bg-emerald-600' : 'bg-orange-600';
+                const statusText = h.status === 'Completado' ? 'Completado' : 'Pendiente';
+
+                card.innerHTML = `
+                    <div class="flex flex-col md:flex-row md:items-center w-full">
+                        <span class="text-lg font-bold w-16 text-sky-400">${h.id}</span>
+                        <div class="flex-1 md:mx-4">
+                            <p class="font-medium text-white">${h.desc}</p>
+                            <p class="text-sm text-slate-400">Fecha Estimada: ${h.date}</p>
+                        </div>
+                        <span id="status-${index}" class="px-3 py-1 text-xs font-semibold rounded-full mt-2 md:mt-0 ${statusColor}">${statusText}</span>
+                    </div>
+                `;
+
+                const statusElement = document.getElementById(`status-${index}`);
+                statusElement.addEventListener('click', () => toggleMilestoneStatus(index));
+
+                container.appendChild(card);
+            });
+        }
+
+        function toggleMilestoneStatus(index) {
+            const hito = DATA.milestones[index];
+            const statusElement = document.getElementById(`status-${index}`);
+
+            if (hito.status === 'Pendiente') {
+                hito.status = 'Completado';
+                statusElement.textContent = 'Completado';
+                statusElement.classList.remove('bg-orange-600');
+                statusElement.classList.add('bg-emerald-600');
+                DATA.completedRFs++; 
+            } else {
+                hito.status = 'Pendiente';
+                statusElement.textContent = 'Pendiente';
+                statusElement.classList.remove('bg-emerald-600');
+                statusElement.classList.add('bg-orange-600');
+                DATA.completedRFs--;
+            }
+            updateChart(); 
+        }
+
+        function updateChart() {
+            const rfChartCanvas = document.getElementById('rfChart').getContext('2d');
+            
+            if (window.rfChartInstance) {
+                window.rfChartInstance.data.datasets[0].data = [DATA.completedRFs, DATA.totalRFs - DATA.completedRFs];
+                window.rfChartInstance.update();
+            } else {
+                window.rfChartInstance = new Chart(rfChartCanvas, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['RFs Completados', 'RFs Pendientes'],
+                        datasets: [{
+                            data: [DATA.completedRFs, DATA.totalRFs - DATA.completedRFs],
+                            backgroundColor: ['#38bdf8', '#475569'], 
+                            hoverBackgroundColor: ['#0284c7', '#64748b'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '75%',
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: 'var(--text-light)' }
+                            },
+                            tooltip: {
+                                bodyColor: 'var(--bg-dark)',
+                                titleColor: 'var(--bg-dark)',
+                                backgroundColor: 'var(--text-light)',
+                                borderColor: 'var(--accent)',
+                                borderWidth: 1
+                            }
+                        }
+                    }
+                });
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            setupNavigation();
+            setupTabs();
+            renderRequirements();
+            renderMilestones();
+            updateChart(); 
+        });
+    </script>
+</body>
+</html>
